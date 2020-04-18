@@ -125,6 +125,34 @@ while true; do
 				fi
 				break
 				;;
+			mem_use)
+				echo "-----------------------------------------"
+				MEM_TOTAL=`free -m | awk '{if(NR==2)printf "%0.1f",$2/1024}END{print "G"}'`
+				USE=`free -m | awk '{if(NR==2)printf "%0.1f",$3/1024}END{print "G"}'`
+				FREE=`free -m | awk '{if(NR==2)printf "%0.1f",$4/1024}END{print "G"}'`
+				CACHE=`free -m | awk '{if(NR==2)printf "%0.1f",$6/1024}END{print "G"}'`
+				echo -e "Total: $MEM_TOTAL"
+				echo -e "Use: $USE"
+				echo -e "Free: $FREE"
+				echo -e "Cache: $CACHE"
+				echo "-----------------------------------------"
+				break
+				;;
+			tcp_status)
+				break
+				;;
+			cpu_top10)
+				break
+				;;
+			mem_top10)
+				break
+				;;
+			traffic)
+				break
+				;;
+			quit)
+				exit
+				;;
 			*)
 				exit
 				;;
