@@ -56,7 +56,7 @@ do
 					IOWAIT=`vmstat | awk '{if(NR==3)print $16"%"}'`
 					echo "Util: $UTIL"
 					echo "USER: $USER"
-					echo "System sue: $SYS"
+					echo "System use: $SYS"
 					echo "I/O wait: $IOWAIT"
 					let i++
 					sleep 1
@@ -92,7 +92,7 @@ do
 					fi
 				done
 				echo "--------------------------------------"
-				echo -e "Disk total:\n${DISK_TOTAL}"
+				echo -e "Disk total:${DISK_TOTAL}"
 				if [ -f $DISK_LOG ]; then
 					echo "----------------------------------------"
 					cat $DISK_LOG
@@ -110,8 +110,8 @@ do
 				INODE_USE=`df -i | awk '/^\/dev/{print int($5)}'`
 				for i in $INODE_USE; do
 					if [ $i -gt 90 ]; then
-						PART=`df -h| awk '{if(int($5)=='''$i''')print &6}'`
-						echo "$PATH = ${i}%" >> $INODE_LOG
+						PART=`df -h| awk '{if(int($5)=='''$i''')print $6}'`
+						echo "$PART= ${i}%" >> $INODE_LOG
 					fi
 				done
 				if [ -f $INODE_LOG ]; then
@@ -142,7 +142,7 @@ do
 			tcp_status)
 				echo "-----------------------------------------"
 				COUNT=`ss -ant | awk '!/State/{status[$1]++}END{for(i in status)print i, status[i]}'`
-				echo -e "TCP connection status: $COUNT"
+				echo -e "TCP connection status: \n$COUNT"
 				echo "-----------------------------------------"
 				break
 				;;
@@ -205,7 +205,7 @@ do
 					OLD_OUT=`ifconfig $eth | awk -F'[: ]+' '/bytes/{if(NR==8)print $9;else if(NR==7)print $6}'`
 					sleep 1
 					NEW_IN=`ifconfig $eth | awk -F'[: ]+' '/bytes/{if(NR==8)print $4;else if(NR==5)print $6}'`
-					NEW_OUT=`ifconfig $eth | awk -F'[: ]+' '/bytes/{if(NR==8)print $9;else if(NR==5)print $6}'`
+					NEW_OUT=`ifconfig $eth | awk -F'[: ]+' '/bytes/{if(NR==8)print $9;else if(NR==7)print $6}'`
 					IN=`awk 'BEGIN{printf "%.1f\n", '$((${NEW_IN}-${OLD_IN}))'/1024/128}'`
 					OUT=`awk 'BEGIN{printf "%.1f\n", '$((${NEW_OUT}-${OLD_OUT}))'/1024/128}'`
 					echo "${IN}MB/s ${OUT}MB/s"
