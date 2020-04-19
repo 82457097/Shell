@@ -7,3 +7,4 @@
 
 - ### 4-19<br/>
   完成show_sys_info.sh脚本项目<br/>
+  完成show_sys_info.sh脚本项目的笔记<br/>
