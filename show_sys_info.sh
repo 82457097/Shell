@@ -1,7 +1,6 @@
 #!/usr/bin/bash
-PS3="Your choice:"
+PS3="Your choice: "
 Green1="\033[32m"
-
 Green2="\033[0m"
 
 osCheck() {
@@ -41,14 +40,16 @@ if ! which iostat &>/dev/null; then
 	echo "------------------------------------------------------------------------"
 fi
 
-while true; do
-	select chioce in cpu_load disk_load disk_use disk_inode mem_use tcp_status cpu_top10 mem_top10 traffic quit; do
+while true
+do
+	select choice in cpu_load disk_load disk_use disk_inode mem_use tcp_status cpu_top10 mem_top10 traffic quit
+	do
 		case "$choice" in 
 			cpu_load)
 				echo "---------------------------------------"
 				i=1
 				while [[ $i -le 3 ]]; do
-					echo -e "\033[32m 参考值${i}\033[0m"
+					echo -e "$Green1 参考值${i} $Green2"
 					UTIL=`vmstat | awk '{if(NR==3)print 100-$15"%"}'`
 					USER=`vmstat | awk '{if(NR==3)print $13"%"}'`
 					SYS=`vmstat | awk '{if(NR==3)print $14"%"}'`
@@ -66,7 +67,7 @@ while true; do
 				echo"----------------------------------------"
 				i=1
 				while [[ $i -le 3 ]]; do
-					echo "$Green1 参考值${i} $Green2"
+					echo -e "$Green1 参考值${i} $Green2"
 					UTIL=`iostat -x -k | awk '/^[v|s]/{OFS=": ";print $1,$NF"%"}'`
 					READ=`iostat -x -k | awk '/^[v|s]/{OFS=": ";print $1,$6"KB"}'`
 					WRITE=`iostat -x -k | awk '/^[v|s]/{OFS=": ";print $1,$7"KB"}'`
@@ -139,22 +140,89 @@ while true; do
 				break
 				;;
 			tcp_status)
+				echo "-----------------------------------------"
+				COUNT=`ss -ant | awk '!/State/{status[$1]++}END{for(i in status)print i, status[i]}'`
+				echo -e "TCP connection status: $COUNT"
+				echo "-----------------------------------------"
 				break
 				;;
 			cpu_top10)
+				echo "-----------------------------------------"
+				CPU_LOG=/tmp/cpu_top.tmp
+				i=1
+				while [[ $i -le 3 ]]; do
+					ps aux | awk '{if($3>0.1)print " CPU: "$3"% --> ", $11, $12, $13, $14, $15, $16, "(PID:"$2")" | "sort -k2 -nr | head -n 10"}' > $CPU_LOG
+					#ps aux | awk '{if($3>0.1){{printf "PID: "$2" CPU: "$3"% -->"}for(i=11;i<=NF;i++)if(i==NF)printf $i"\n";else printf $i}}' | sort -k4 -nr | head -10 > $CPU_LOG
+					if [[ -n `cat $CPU_LOG` ]]; then
+						echo -e "$Green1 参考值 $Green2"
+						cat $CPU_LOG
+						> $CPU_LOG
+					else
+						echo "No process using the CPU."
+						break
+					fi
+					let i++
+					sleep 1
+				done
+				echo "-----------------------------------------"
 				break
 				;;
 			mem_top10)
+				echo "-----------------------------------------"
+				MEM_LOG=/tmp/mem_log.tmp
+				i=1
+				while [[ $i -le 3 ]]; do
+					ps aux | awk '{if($4>0.1)print " Memory: "$4"% --> ", $11, $12, $13, $14, $15, $16, "(PID:"$2")" | "sort -k2 -nr | head -n 10"}' > $MEM_LOG
+					#ps aux | awk '{if($4>0.1){{printf "PID: "$2" Memory: "$4"% -->"}for(i=11;i<=NF;i++)if(i==NF)printf $i"\n";else printf $i}}' | sort -k4 -nr | head -10 > $MEM_LOG
+					if [[ -n `cat $MEM_LOG` ]]; then
+						echo -e "$Green1 参考值 $Green2"
+						cat $MEM_LOG
+						> $MEM_LOG
+					else
+						echo "No process using the Memory."
+						break
+					fi
+					let i++
+					sleep 1
+					done
+					echo "-----------------------------------------"
 				break
 				;;
 			traffic)
+				while true; do
+					read -p "Please enter the network card name(eth[0-9] or em[0-9]): " eth
+					if [ `ifconfig | grep -c "\<$eth\>"` -eq 1 ]; then
+						break
+					else
+						echo "Input formate error or Don't have the card name, please input again."
+					fi
+				done
+				echo "---------------------------------------"
+				echo -e "In -------- Out"
+				i=1
+				while [[ $i -le 3 ]]; do
+					OLD_IN=`ifconfig $eth | awk -F'[: ]+' '/bytes/{if(NR==8)print $4;else if(NR==5)print $6}'`
+					OLD_OUT=`ifconfig $eth | awk -F'[: ]+' '/bytes/{if(NR==8)print $9;else if(NR==7)print $6}'`
+					sleep 1
+					NEW_IN=`ifconfig $eth | awk -F'[: ]+' '/bytes/{if(NR==8)print $4;else if(NR==5)print $6}'`
+					NEW_OUT=`ifconfig $eth | awk -F'[: ]+' '/bytes/{if(NR==8)print $9;else if(NR==5)print $6}'`
+					IN=`awk 'BEGIN{printf "%.1f\n", '$((${NEW_IN}-${OLD_IN}))'/1024/128}'`
+					OUT=`awk 'BEGIN{printf "%.1f\n", '$((${NEW_OUT}-${OLD_OUT}))'/1024/128}'`
+					echo "${IN}MB/s ${OUT}MB/s"
+					i=$(($i+1))
+					sleep 1
+				done
+				echo "---------------------------------------"
 				break
 				;;
 			quit)
-				exit
+				exit 0
 				;;
 			*)
-				exit
+				echo "---------------------------------------"
+				echo "Please input corret number."
+				echo "---------------------------------------"
+				break
 				;;
 		esac
 	done
